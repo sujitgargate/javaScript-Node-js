@@ -10,7 +10,7 @@ exports.createUser = (req,res,next)=>{
         var errors = req.validationErrors();
         if (errors) { return res.status(400).send(errors); }
         else{
-            userService.signup(req,res)
+            userService.Signup(req,res)
     
        }  
 }
