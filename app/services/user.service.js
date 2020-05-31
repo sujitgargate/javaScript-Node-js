@@ -104,37 +104,110 @@ exports.confirmUser = async (req, res) => {
     })      
 }
 
-exports.logInUser=  async (req,res)=>{
-    var userData =  await User.findOne({email:req.body.email})
-    
-    if(!userData){
-        return res.send({
-            message:'user not found , Please register'
-        })
-    }else{
-        bcrypt.compare(req.body.password,userData.password, (error,result)=>{
-            if(!resultData){
-                return res.send({
-                    message:'password didnt match , Try again'
-                })
-            }if(resultData){
-                const responseData=jwt.sign({
-                    email : userData.email,
-                    userId : userData.name
-                },
-                process.env.JWT_KEY,
-                {
-                    expiresIn :'20m'
-                },
+//My code
 
-                )
-                return res.send({
-                    responseData : responseData,
-                    message :' Login sucessful'
+// exports.logInUser=  async (req,res)=>{
+//     var userData =  await User.findOne({email:req.body.email})
+    
+//     if(!userData){
+//         return res.send({
+//             message:'user not found , Please register'
+//         })
+//     }else{
+//         bcrypt.compare(req.body.password,userData.password, (error,resultData)=>{
+//             if(!resultData){
+//                 return res.send({
+//                     message:'password didnt match , Try again'
+//                 })
+//             }if(resultData){
+//                 const responseData=jwt.sign({
+//                     email : userData.email,
+//                     userId : userData.name
+//                 },
+//                 process.env.JWT_KEY,
+//                 {
+//                     expiresIn :'20m'
+//                 },
+
+//                 )
+//                 return res.send({
+//                     responseData : responseData,
+//                     message :' Login sucessful'
+//                 })
+//             }
+//         })
+
+//     }
+     
+// }
+
+exports.login=async (req,res)=>{
+    try {
+        var userExists=await User.findOne({
+            email:req.body.email
+        })
+        if(userExists){
+            if(bcrypt.compareSync(req.body.password,userData)){
+                if(!userExists.isVerified){
+                    return res.status(400).send({
+                        message:'user not verified'
+                    })
+                }
+                const payload = {
+                    _id : userExists._id,
+                    email : userExists.email,
+                    name : userExists.name
+                }
+                let token = jwt.sign(payload,process.env.JWT_KEY,{
+                    expiresIn: 14440
+                })
+                res.send(token)
+            }
+        }
+    } catch (error) {
+        return error   
+    }
+}
+exports.passwordReset = async(req,res)=>{
+    try {
+        var userExists= await User.findOne({
+            email:req.body.email
+        })
+        if(userExists){
+            console.log('1');
+            if(req.body.password==req.body.Retypepassword){ 
+                if(await bcrypt.compareSync(req.body.password,userExists.password)){
+                    res.send({message :' Typed password cant be previous one'})
+                }else{
+                    console.log('2');
+                    await bcrypt.hash(req.body.password,bcrypt.genSaltSync(10),null,(error,hash)=>{
+                        if(error){
+                            throw error;
+                        }else{
+                            console.log('3');
+                            userExists.password=hash;
+                            userExists.save();
+                            res.status(200).send({
+                                message: 'password reset sucess pls login'
+                            })
+                        }
+                    })
+                }
+            }else{
+                console.log('4');
+                res.send({
+                    message: 'password and retyped password did\'nt match'
                 })
             }
+        }else{
+            res.status(400).send({
+                message:'user not found'
+            })
+        }        
+    } catch (error) {
+        return res.send({
+            message :error
         })
-
+        
     }
-     
 }
