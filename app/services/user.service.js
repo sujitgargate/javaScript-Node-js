@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
  * @param  {} req
  * @param  {} res
  */
+
 exports.Signup = async function (req, res) {
     /// checks if user exist
     var userExist = await User.findOne({
@@ -74,140 +75,130 @@ exports.Signup = async function (req, res) {
 
 exports.confirmUser = async (req, res) => {
     var tokenData = await Token.findOne({ token: req.params.token })
-    if(!tokenData){
+    if (!tokenData) {
         return res.send({
-            message : 'Invalid token passed'
+            message: 'Invalid token passed'
         })
     }
     var userData = await User.findOne({
-        _id : tokenData._userId
+        _id: tokenData._userId
     })
-    if(!userData){
+    if (!userData) {
         return res.status(401).send({
-            message : 'users doesnt exist , account might be deleted'
+            message: 'users doesnt exist , account might be deleted'
         })
     }
-    if(userData.isVerified){
+    if (userData.isVerified) {
         return res.send({
-            message : 'User already verified'
+            message: 'User already verified'
         })
     }
     userData.isVerified = true;
     userData.save()
-    .then(verifiedSucess =>{
-        return res.send({
-            message : 'Account sucessfully verified'
+        .then(verifiedSucess => {
+            return res.send({
+                message: 'Account sucessfully verified'
+            })
         })
-    })
-    .catch(error =>{
-        return res.send(error);
-    })      
+        .catch(error => {
+            return res.send(error);
+        })
 }
 
-//My code
-
-// exports.logInUser=  async (req,res)=>{
-//     var userData =  await User.findOne({email:req.body.email})
-    
-//     if(!userData){
-//         return res.send({
-//             message:'user not found , Please register'
-//         })
-//     }else{
-//         bcrypt.compare(req.body.password,userData.password, (error,resultData)=>{
-//             if(!resultData){
-//                 return res.send({
-//                     message:'password didnt match , Try again'
-//                 })
-//             }if(resultData){
-//                 const responseData=jwt.sign({
-//                     email : userData.email,
-//                     userId : userData.name
-//                 },
-//                 process.env.JWT_KEY,
-//                 {
-//                     expiresIn :'20m'
-//                 },
-
-//                 )
-//                 return res.send({
-//                     responseData : responseData,
-//                     message :' Login sucessful'
-//                 })
-//             }
-//         })
-
-//     }
-     
-// }
-
-exports.login=async (req,res)=>{
+exports.login = async (req, res) => {
     try {
-        var userExists=await User.findOne({
-            email:req.body.email
+        var userExists = await User.findOne({
+            email: req.body.email
         })
-        if(userExists){
-            if(bcrypt.compareSync(req.body.password,userData)){
-                if(!userExists.isVerified){
+        if (userExists) {
+            if (bcrypt.compareSync(req.body.password, userData)) {
+                if (!userExists.isVerified) {
                     return res.status(400).send({
-                        message:'user not verified'
+                        message: 'user not verified'
                     })
                 }
                 const payload = {
-                    _id : userExists._id,
-                    email : userExists.email,
-                    name : userExists.name
+                    _id: userExists._id,
+                    email: userExists.email,
+                    name: userExists.name
                 }
-                let token = jwt.sign(payload,process.env.JWT_KEY,{
+                let token = jwt.sign(payload, process.env.JWT_KEY, {
                     expiresIn: 14440
                 })
                 res.send(token)
             }
         }
     } catch (error) {
-        return error   
+        return error
     }
 }
-exports.passwordReset = async(req,res)=>{
+
+
+exports.passwordReset = async function(req, res){
     try {
-        var userExists= await User.findOne({
+        let userExist = await User.findOne({
             email:req.body.email
         })
-        if(userExists){
-            console.log('1');
-            if(req.body.password==req.body.Retypepassword){ 
-                if(await bcrypt.compareSync(req.body.password,userExists.password)){
-                    res.send({message :' Typed password cant be previous one'})
-                }else{
-                    console.log('2');
-                    await bcrypt.hash(req.body.password,bcrypt.genSaltSync(10),null,(error,hash)=>{
-                        if(error){
-                            throw error;
-                        }else{
-                            console.log('3');
-                            userExists.password=hash;
-                            userExists.save();
-                            res.status(200).send({
-                                message: 'password reset sucess pls login'
-                            })
-                        }
+
+        if(userExist){
+            var token = await new Token({
+                _userId: userExist._id,
+                token: crypto.randomBytes(16).toString('hex')      
+            })           
+
+            token.save(function (err) {
+                if (err) {
+                    return res.status(500).send({
+                        message: err.message
                     })
                 }
-            }else{
-                console.log('4');
-                res.send({
-                    message: 'password and retyped password did\'nt match'
-                })
-            }
-        }else{
-            res.status(400).send({
-                message:'user not found'
+                else {
+                    let subject = 'KeepNotes, Please reset your password'
+                    text = token.token
+                    eventEmitter.emit('sendEmail', subject, userExist, text)
+                    /**
+                     * eventEmitter returns returns True/False where email sent or not . It doesnt return that email is reached or not 
+                     */
+    
+                }
             })
-        }        
+        }
     } catch (error) {
-        return res.send({
-            message :error
+        throw error
+    }
+}
+
+exports.updatePassword= async (req,res)=>{
+    var userToken= await Token.findOne({
+        token:req.params.token
+    })
+    if(userToken){
+        var userData=User.findOne({
+            _id:userToken._userId
         })
-        
+        if(userData){
+            await bcrypt.hash(req.body.password,bcrypt.genSaltSync(16),null,async (error,hash)=>{
+                if(error){
+                    res.send({
+                        message:'something went wrong , try again later'
+                    })
+                }else{
+                        user.password=hash
+                }
+                userData.save((error)=>{
+                    if(error){
+                        return res.status(500).send({ 
+                            message:'something went wrong'
+                        })
+                    }else{
+                        return res.send({
+                            message:'Password reset Done'
+                        })
+                    }
+                })
+            })
+        }
+    }else{
+        res.send({ message : 'User not found'})
     }
 }

@@ -1,4 +1,11 @@
+/***
+ * models contains database designs and contains data standards eg. name:string, age:number
+ */
+
 var mongoose = require('mongoose');
+/**
+ * mongoose is provided by MongoDB which contains methods like findone(),save() etc. 
+ */
 const userSchema =mongoose.Schema({
     name: String,
     email: { type: String, unique: true },

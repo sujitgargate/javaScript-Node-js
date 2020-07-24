@@ -1,6 +1,6 @@
 var userService = require('../services/user.service')
 
-exports.createUser = (req,res,next)=>{
+exports.createUser = (req,res)=>{
         req.assert('name', 'Name cannot be blank').notEmpty();
         req.assert('email', 'Email is not valid').isEmail();
         req.assert('email', 'Email cannot be blank').notEmpty();
@@ -71,25 +71,28 @@ exports.login=(req,res)=>{
     }
 }
 
-
-
-exports.passwordReset =(req,res)=>{
+exports.passwordReset=(req,res)=>{
     try{
-        req.assert('email', 'Email is not valid').isEmail();
-        req.assert('email', 'Email cannot be blank').notEmpty();
-        req.assert('password', 'Password must be at least 4 characters long').len(4);
-        req.assert('Retypepassword', 'Password must be at least 4 characters long').len(4);
-        req.sanitize('email').normalizeEmail({ remove_dots: false });
-        
-        var error = req.validationErrors();
-        if(error){
-            console.log('inside 0');
-            return status(400).send(error);
+        req.assert('email','Email not valid').isEmail();
+        req.sanitize('email').normalizeEmail({remove_dots:false});
+        var error=req.validationErrors();
+        if(error){ 
+            return send(error);
         }else{
-            console.log('inside 1');
             userService.passwordReset(req,res);
         }
-    }catch(error){
-        req.send(error)
+    }catch (error) {
+        res.send(error);
+    }
+}
+
+exports.updatePassword=(req,res)=>{
+    req.assert('password','password must be atleast 4 char long').len(4);
+
+    var errors = req.validationErrors();
+
+    if(errors){ return res.send(errors)}
+    else{
+        userService.updatePassword(req,res);
     }
 }

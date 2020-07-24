@@ -6,44 +6,9 @@ dotenv.config();
 
 /// Create event handler
 var sendEmail = function (subject, user, text) {
-    // return new Promise(async function(resolve, reject){
-    //     try {
-    //         var transporter = await nodemailer.createTransport({
-    //             host: 'smtp.gmail.com',
-    //             service: 'gmail',
-    //             port: 465,
-    //             secure: true,
-
-    //            // secure: true,
-    //             auth: {
-    //                 user: process.env.EMAIL,
-    //                 pass: process.env.PASSWORD,
-    //                 type: 'OAuth2'
-    //             }
-    //         });console.log('email transporter 1');
-
-    //         var mailOptions =  {
-    //             from: process.env.EMAIL,
-    //             to: user.email,
-    //             subject: subject,
-    //             text: text
-    //         }
-    //         await transporter.sendMail(mailOptions, async function (error, info) {
-    //             if (error) {
-    //                 console.log('email transporter 2');
-    //                 return await resolve(error.message)
-    //             }
-    //             else {
-    //                 console.log('email transporter 3');
-    //                 return resolve('Verfication mail has been sent to ' + user.email + '.');
-    //             }
-    //         });
-
-    //     } catch (error) {
-    //         return reject(error)
-    //     }
-    // })
-       
+  /**
+   * sendEmail comes from nodemailer which helps sending emails
+   */
     var transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
