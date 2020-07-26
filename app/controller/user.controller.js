@@ -34,25 +34,6 @@ exports.confirmUser =(req,res)=>{
     }
 }
 
-
-exports.logInUser=(req,res)=>{
-    try{
-        req.assert('email', 'Email is not valid').isEmail();
-        req.assert('email', 'Email cannot be blank').notEmpty();
-        req.assert('password', 'Password must be at least 4 characters long').len(4);
-        req.sanitize('email').normalizeEmail({ remove_dots: false });
-
-        var error = req.validationErrors();
-        if(error){
-            return status(400).send(error);
-        }else{
-            userService.logInUser(req,res);
-        }
-    }catch(error){
-        res.send(error)        
-    }
-}
-
 exports.login=(req,res)=>{
     try{
         req.assert('email', 'Email is not valid').isEmail();

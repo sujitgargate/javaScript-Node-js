@@ -74,7 +74,8 @@ exports.Signup = async function (req, res) {
 }
 
 exports.confirmUser = async (req, res) => {
-    var tokenData = await Token.findOne({ token: req.params.token })
+    
+    var tokenData = await Token.findOne({ _userId: req.params.token })
     if (!tokenData) {
         return res.send({
             message: 'Invalid token passed'
@@ -111,7 +112,7 @@ exports.login = async (req, res) => {
             email: req.body.email
         })
         if (userExists) {
-            if (bcrypt.compareSync(req.body.password, userData)) {
+            if (bcrypt.compareSync(req.body.password,userExists.password )) {
                 if (!userExists.isVerified) {
                     return res.status(400).send({
                         message: 'user not verified'
@@ -125,7 +126,7 @@ exports.login = async (req, res) => {
                 let token = jwt.sign(payload, process.env.JWT_KEY, {
                     expiresIn: 14440
                 })
-                res.send(token)
+                res.send({message: "Token : ",token})
             }
         }
     } catch (error) {
@@ -134,17 +135,17 @@ exports.login = async (req, res) => {
 }
 
 
-exports.passwordReset = async function(req, res){
+exports.passwordReset = async function (req, res) {
     try {
         let userExist = await User.findOne({
-            email:req.body.email
+            email: req.body.email
         })
 
-        if(userExist){
+        if (userExist) {
             var token = await new Token({
                 _userId: userExist._id,
-                token: crypto.randomBytes(16).toString('hex')      
-            })           
+                token: crypto.randomBytes(16).toString('hex')
+            })
 
             token.save(function (err) {
                 if (err) {
@@ -159,7 +160,7 @@ exports.passwordReset = async function(req, res){
                     /**
                      * eventEmitter returns returns True/False where email sent or not . It doesnt return that email is reached or not 
                      */
-    
+
                 }
             })
         }
@@ -168,37 +169,47 @@ exports.passwordReset = async function(req, res){
     }
 }
 
-exports.updatePassword= async (req,res)=>{
-    var userToken= await Token.findOne({
-        token:req.params.token
+exports.updatePassword = async (req, res) => {
+    var userToken = await Token.findOne({
+        _userId: req.params.token
     })
-    if(userToken){
-        var userData=User.findOne({
-            _id:userToken._userId
+    if (userToken) {
+        var userData = User.findOne({
+            _id: userToken._userId
+            
         })
-        if(userData){
-            await bcrypt.hash(req.body.password,bcrypt.genSaltSync(16),null,async (error,hash)=>{
-                if(error){
+        if (userData) {
+            await bcrypt.hash(req.body.password, bcrypt.genSaltSync(10), null, async (error, hash) => {
+                if (error) {
                     res.send({
-                        message:'something went wrong , try again later'
+                        message: 'something went wrong , try again later'
                     })
-                }else{
-                        user.password=hash
+                } else {
+                    userData.password = hash
                 }
-                userData.save((error)=>{
-                    if(error){
-                        return res.status(500).send({ 
-                            message:'something went wrong'
+                (await userData).save((error) => {
+                    if (error) {
+                        return res.status(500).send({
+                            message: 'something went wrong'
                         })
-                    }else{
+                    } else {
                         return res.send({
-                            message:'Password reset Done'
+                            message: 'Password Updation Done'
                         })
                     }
                 })
             })
         }
-    }else{
-        res.send({ message : 'User not found'})
+    } else {
+        res.send({ message: 'User not found' })
     }
+}
+
+exports.getValidUserById = async function (userId) {
+    var user = await User.findOne({
+        _id: userId,
+        isActive: true,
+        isDeleted: false
+    })
+    return user;
 }

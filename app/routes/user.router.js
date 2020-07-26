@@ -34,9 +34,8 @@ router.use(expressValidator())
 
 router.post('/user',userController.createUser)
 router.get('/verify/:token',userController.confirmUser);
-router.post('/loginMYCode',userController.logInUser); //Code written by me loginUser method
 
-router.post('/login',userController.login); //code told by manoj sir login()
+router.post('/login',userController.login);
 
 router.post('/resetpassword',userController.passwordReset);
 
